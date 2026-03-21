@@ -14,7 +14,6 @@ export class EnrollmentService {
   constructor(private readonly emitter: EventEmitter) {}
 
   enroll(
-    enrollmentId: EnrollmentId,
     student: Student,
     course: Course,
     semester: Semester,

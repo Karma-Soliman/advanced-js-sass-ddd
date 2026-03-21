@@ -1,130 +1,182 @@
-import { Student, Course } from "./src/domain/entities"
-import { EnrollmentService } from "./src/domain/service"
+import { Student } from "./src/domain/Entities/student"
+import { Course } from "./src/domain/Entities/course"
+import { EnrollmentService } from "./src/domain/service/EnrollmentService"
+import { EventEmitter } from "./src/infrastructure/EventEmitter"
 import {
   createStudentId,
   createCourseCode,
   createEmail,
   createCredits,
   createSemester,
-  createEnrollmentId
+  createEnrollmentId,
 } from "./src/domain/value-objects"
 
-// Helper to unwrap Result
 function unwrap<T>(value: T | Error): T {
-  if (value instanceof Error) {
-    throw new Error(value.message)
-  }
+  if (value instanceof Error) throw new Error(value.message)
   return value
 }
 
-console.log("VALUE OBJECT TESTS ")
+function display(value: unknown | Error): unknown {
+  if (value instanceof Error) return value.message
+  return value
+}
+// ── Setup ─────────────────────────────────────────────────────
 
-
-console.log(createStudentId("STU123456"))
-console.log(createCourseCode("CS101"))
-console.log(createEmail("test@test.com"))
-console.log(createCredits(3))
-console.log(createSemester("Fall2024"))
-console.log(createEnrollmentId("ENR001"))
-
-console.log(createStudentId("BAD"))
-console.log(createCourseCode("INVALID"))
-console.log(createEmail("wrong-email"))
-console.log(createCredits(5))
-console.log(createSemester("Winter2024"))
-console.log(createEnrollmentId("123"))
-
-console.log("\n DOMAIN & BUSINESS LOGIC TESTS ")
+const emitter = new EventEmitter()
+emitter.subscribe((event) =>
+  console.log("  EVENT:", event.type, JSON.stringify(event)),
+)
 
 const studentId = unwrap(createStudentId("STU123456"))
 const email = unwrap(createEmail("john@epita.fr"))
 const courseCode = unwrap(createCourseCode("CS101"))
-const credits = unwrap(createCredits(3))
+const credits3 = unwrap(createCredits(3))
+const credits6 = unwrap(createCredits(6))
 const semester = unwrap(createSemester("Fall2024"))
 
-const student = new Student(studentId, "John Doe", email)
-const course = new Course(courseCode, "Programming", credits, 2)
+console.log("\n=== VALUE OBJECT TESTS ===")
 
-const service = new EnrollmentService()
+console.log("valid StudentId:", createStudentId("STU123456"))
+console.log("invalid StudentId:", display(createStudentId("BAD")))
 
-console.log("\nScenario 1: Successful Enrollment ")
+console.log("valid CourseCode:", createCourseCode("CS101"))
+console.log("invalid CourseCode:", display(createCourseCode("INVALID")))
+
+console.log("valid Email:", createEmail("test@test.com"))
+console.log("invalid Email:", display(createEmail("wrong-email")))
+
+console.log("valid Credits:", createCredits(3))
+console.log("invalid Credits:", display(createCredits(5)))
+
+console.log("valid Semester:", createSemester("Fall2024"))
+console.log("invalid Semester:", display(createSemester("Winter2024")))
+
+console.log("valid EnrollmentId:", createEnrollmentId("ENR-001"))
+console.log("invalid EnrollmentId:", display(createEnrollmentId("123")))
+
+// ── Scenario 1: Successful Enrollment ────────────────────────
+
+console.log("\n=== Scenario 1: Successful Enrollment ===")
 try {
-  const enrollmentId = unwrap(createEnrollmentId("ENR001"))
-  const enrollment = service.enroll(enrollmentId, student, course, semester)
+  const student = new Student(studentId, "John Doe", email)
+  const course = new Course(courseCode, "Programming", credits3, 5)
+  const service = new EnrollmentService(emitter)
 
-  console.log("Enrollment status:", enrollment.getStatus())
+  const enrollment = service.enroll(student, course, semester)
+  if (enrollment instanceof Error) throw enrollment
+
+  console.log("Status:", enrollment.getStatus())
   console.log("Student credits:", student.getCredits())
   console.log("Course enrolled:", course.getEnrolledCount())
 } catch (e) {
   console.log("Error:", (e as Error).message)
 }
 
-console.log("\n Scenario 2: Duplicate Enrollment ")
+// ── Scenario 2: Duplicate Enrollment ─────────────────────────
+
+console.log("\n=== Scenario 2: Duplicate Enrollment ===")
 try {
-  const enrollmentId = unwrap(createEnrollmentId("ENR002"))
-  service.enroll(enrollmentId, student, course, semester)
+  const student = new Student(studentId, "John Doe", email)
+  const course = new Course(courseCode, "Programming", credits3, 5)
+  const service = new EnrollmentService(emitter)
+
+  service.enroll(student, course, semester)
+  const result = service.enroll(student, course, semester)
+  if (result instanceof Error) throw result
 } catch (e) {
   console.log("Expected error:", (e as Error).message)
 }
 
-console.log("\n Scenario 3: Student exceeds 18 credits ")
-try {
-  const bigCredits = unwrap(createCredits(6))
+// ── Scenario 3: Student exceeds 18 credits ───────────────────
 
-  for (let i = 0; i < 4; i++) {
-    student.addCredits(bigCredits)
-  }
+console.log("\n=== Scenario 3: Student Exceeds 18 Credits ===")
+try {
+  const student = new Student(studentId, "John Doe", email)
+  const course1 = new Course(
+    unwrap(createCourseCode("ENG101")),
+    "English",
+    credits6,
+    50,
+  )
+  const course2 = new Course(
+    unwrap(createCourseCode("PHY101")),
+    "Physics",
+    credits6,
+    50,
+  )
+  const course3 = new Course(
+    unwrap(createCourseCode("ART101")),
+    "Art",
+    unwrap(createCredits(4)),
+    50,
+  )
+  const course4 = new Course(
+    unwrap(createCourseCode("MAT101")),
+    "Maths",
+    credits6,
+    50,
+  )
+  const service = new EnrollmentService(emitter)
+
+  service.enroll(student, course1, semester) // 6
+  service.enroll(student, course2, semester) // 12
+  service.enroll(student, course3, semester) // 16
+  console.log("Credits so far:", student.getCredits())
+
+  const result = service.enroll(student, course4, semester) // would be 22
+  if (result instanceof Error) throw result
 } catch (e) {
   console.log("Expected error:", (e as Error).message)
 }
 
-console.log("\n Scenario 4: Course becomes full ")
+// ── Scenario 4: Course becomes full ──────────────────────────
+
+console.log("\n=== Scenario 4: Course Full ===")
 try {
-  const smallCourse = new Course(courseCode, "Mini Course", credits, 1)
-  const service2 = new EnrollmentService()
+  const s1 = new Student(unwrap(createStudentId("STU000001")), "Alice", email)
+  const s2 = new Student(unwrap(createStudentId("STU000002")), "Bob", email)
+  const s3 = new Student(unwrap(createStudentId("STU000003")), "Carol", email)
+  const course = new Course(courseCode, "Mini Course", credits3, 2)
+  const service = new EnrollmentService(emitter)
 
-  service2.enroll(
-    unwrap(createEnrollmentId("ENR003")),
-    student,
-    smallCourse,
-    semester
-  )
+  service.enroll(s1, course, semester)
+  service.enroll(s2, course, semester)
+  console.log("Course full:", course.isFull())
 
-  console.log("First enrollment successful")
-
-  service2.enroll(
-    unwrap(createEnrollmentId("ENR004")),
-    student,
-    smallCourse,
-    semester
-  )
+  const result = service.enroll(s3, course, semester)
+  if (result instanceof Error) throw result
 } catch (e) {
   console.log("Expected error:", (e as Error).message)
 }
 
-console.log("\n Scenario 5: Cancel Enrollment ")
+// ── Scenario 5: Cancel Enrollment ────────────────────────────
+
+console.log("\n=== Scenario 5: Cancel Enrollment ===")
 try {
-  const freshStudent = new Student(studentId, "Mark Edwards", email)
+  const student = new Student(studentId, "John Doe", email)
+  const course = new Course(courseCode, "Programming", credits3, 5)
+  const service = new EnrollmentService(emitter)
 
-  const freshCourse = new Course(courseCode, "Programming", credits, 2)
+  const enrollment = service.enroll(student, course, semester)
+  if (enrollment instanceof Error) throw enrollment
 
-  const freshService = new EnrollmentService()
-
-  const enrollmentId = unwrap(createEnrollmentId("ENR005"))
-
-  const enrollment = freshService.enroll(
-    enrollmentId,
-    freshStudent,
-    freshCourse,
-    semester
+  console.log(
+    "Before cancel:",
+    enrollment.getStatus(),
+    "| credits:",
+    student.getCredits(),
+  )
+  service.cancel(enrollment, student, course)
+  console.log(
+    "After cancel:",
+    enrollment.getStatus(),
+    "| credits:",
+    student.getCredits(),
   )
 
-  console.log("Before cancel:", enrollment.getStatus())
-
-  freshService.cancel(enrollment)
-
-  console.log("After cancel:", enrollment.getStatus())
-
+  // double cancel
+  const result = service.cancel(enrollment, student, course)
+  if (result instanceof Error) throw result
 } catch (e) {
-  console.log("Error:", (e as Error).message)
+  console.log("Expected error:", (e as Error).message)
 }
