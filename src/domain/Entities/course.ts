@@ -16,6 +16,21 @@ export class Course {
 
     this.enrolledCount = enrolledCount
   }
+  
+  static create(
+    code: CourseCode,
+    name: string,
+    credits: Credits,
+    capacity: number,
+  ): Course | Error {
+    if (capacity < 1 || capacity > 200) {
+      return new Error("Capacity must be between 1 and 200")
+    }
+    if (!name.trim()) {
+      return new Error("Course name cannot be empty")
+    }
+    return new Course(code, name, credits, capacity)
+  }
 
   isFull(): boolean {
     return this.enrolledCount >= this.capacity
@@ -28,9 +43,7 @@ export class Course {
   justCrossed80Percent(): boolean {
     const before = (this.enrolledCount - 1) / this.capacity
     const after = this.enrolledCount / this.capacity
-    return (
-      before < 0.8 && after >= 0.8
-    )
+    return before < 0.8 && after >= 0.8
   }
 
   enrollStudent(): void | Error {
