@@ -10,3 +10,8 @@ export function createEnrollmentId(value: string): EnrollmentId | Error {
   return value as EnrollmentId
 }
 
+export function generateEnrollmentId(): EnrollmentId {
+  const unique =
+    Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7)
+  return `ENR-${unique}` as EnrollmentId
+}
