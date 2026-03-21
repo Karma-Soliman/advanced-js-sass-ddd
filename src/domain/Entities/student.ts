@@ -16,15 +16,22 @@ export class Student {
     return this.enrolledCredits + credits <= 18
   }
 
-  addCredits(credits: Credits): void {
+  addCredits(credits: Credits): void | Error {
     if (!this.canEnroll(credits)) {
-      throw new Error("Credit limit exceeded (max 18)")
+      return new Error("Credit limit exceeded (max 18)")
     }
     this.enrolledCredits += credits
   }
 
   getCredits(): number {
     return this.enrolledCredits
+  }
+
+  removeCredits(credits: Credits): void | Error {
+    if (this.enrolledCredits - credits < 0) {
+      return new Error(`Cannot remove ${credits} credits, student only has ${this.enrolledCredits}`)
+    }
+    this.enrolledCredits -= credits
   }
 }
 

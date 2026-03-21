@@ -8,7 +8,7 @@ export class Course {
     public name: string,
     public credits: Credits,
     public capacity: number,
-    enrolledCount: number = 0
+    enrolledCount: number = 0,
   ) {
     if (capacity < 1 || capacity > 200) {
       throw new Error("Capacity must be between 1 and 200")
@@ -25,14 +25,29 @@ export class Course {
     return this.enrolledCount >= 0.8 * this.capacity
   }
 
-  enrollStudent(): void {
+  enrollStudent(): void | Error {
     if (this.isFull()) {
-      throw new Error("Course is full")
+      return new Error("Course is full")
     }
     this.enrolledCount++
   }
 
+  unenrollStudent(): void | Error {
+    if (this.enrolledCount === 0) {
+      return new Error(`Course has no enrolled students to remove`)
+    }
+    this.enrolledCount--
+  }
+
   getEnrolledCount(): number {
     return this.enrolledCount
+  }
+
+  getAvailableSeats(): number {
+    return this.capacity - this.enrolledCount
+  }
+
+  getFillPercent(): number {
+    return Math.round((this.enrolledCount / this.capacity) * 100)
   }
 }

@@ -27,6 +27,10 @@ export class Enrollment {
     this.status = "cancelled"
   }
 
+  isActive(): boolean {
+    return this.status === "active"
+  }
+
   getStatus(): EnrollmentStatus {
     return this.status
   }
