@@ -25,6 +25,14 @@ export class Course {
     return this.enrolledCount >= 0.8 * this.capacity
   }
 
+  justCrossed80Percent(): boolean {
+    const before = (this.enrolledCount - 1) / this.capacity
+    const after = this.enrolledCount / this.capacity
+    return (
+      before < 0.8 && after >= 0.8
+    )
+  }
+
   enrollStudent(): void | Error {
     if (this.isFull()) {
       return new Error("Course is full")
