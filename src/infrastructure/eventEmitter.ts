@@ -1,17 +1,28 @@
-import { DomainEvent, Observer } from "./events";
+type EventHandler<T> = (event: T) => void
 
 export class EventEmitter {
-    private observers: Observer[] = []
+  private observers: {
+    [key: string]: EventHandler<any>[]
+  } = {}
 
-    subscribe(observer: Observer): void {
-        this.observers.push(observer)
+  subscribe<T>(eventType: string, handler: EventHandler<T>): void {
+    if (!this.observers[eventType]) {
+      this.observers[eventType] = []
     }
-    
-    unsubscribe(observer: Observer): void {
-        this.observers = this.observers.filter(o => o !== observer)
-    }
+    this.observers[eventType].push(handler)
+  }
 
-    emit(event: DomainEvent): void {
-        this.observers.forEach(o=> o(event))
-    }
+  unsubscribe<T>(eventType: string, handler: EventHandler<T>): void {
+    if (!this.observers[eventType]) return
+
+    this.observers[eventType] = this.observers[eventType].filter(
+      h => h !== handler
+    )
+  }
+
+  emit<T>(eventType: string, payload: T): void {
+    if (!this.observers[eventType]) return
+
+    this.observers[eventType].forEach(handler => handler(payload))
+  }
 }

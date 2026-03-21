@@ -13,8 +13,8 @@ export type StudentEnrolled = {
   semester: Semester
 }
 
-export type EnrollementCancelled = {
-  type: "EnrollementCancelled"
+export type EnrollmentCancelled = {
+  type: "EnrollmentCancelled"
   enrollmentId: EnrollmentId
   studentId: StudentId
   courseCode: CourseCode
@@ -36,7 +36,7 @@ export type CourseFull = {
 
 export type DomainEvent =
   | StudentEnrolled
-  | EnrollementCancelled
+  | EnrollmentCancelled
   | CourseCapacityReached
   | CourseFull
 
